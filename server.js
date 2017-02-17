@@ -12,9 +12,15 @@ var cam = require("./camera.js");
 var camera = new cam();
 
 app.post('/api/v1/:id',function(req,res){
-    res.end(req.params.id + " Done!!!");
     reusable.log(req.params.id);
     reusable.log(req.body);
+    camera.updatePicture(req.params.id,req.body,function(err,result){
+        if(err){
+            reusable.sendResponse(400,{'Content-Type': 'application/json'},'{"error":"Bad Request"}',"Error in POST camera Data",res,err,result);
+        }else{
+            reusable.sendResponse(200,{'Content-Type': 'application/json'},JSON.stringify(result),"Successfully Updated The Image",res,err,result);
+        }
+    });
 }); 
 
 app.get('/api/v1/:id',function(req,res){
@@ -25,6 +31,19 @@ app.get('/api/v1/:id',function(req,res){
         }else{
             reusable.sendResponse(200,{'Content-Type': 'application/json'},JSON.stringify(result),"Successfully Sent The Image",res,err,result);
         }
+    });
+}); 
+
+app.get('/api/v1/ShouldSendPicture/:id',function(req,res){
+    reusable.log("Received GET(Check) request for Device: "+req.params.id);
+    camera.shouldSendPicture(req.params.id,function(answer){
+        var r = "";
+        if(answer){
+            r = "true";
+        }else{
+            r = "false";
+        }
+        reusable.sendResponse(200,{'Content-Type': 'application/text'},r,"Successfully Sent The Image",res,null,null);
     });
 }); 
 

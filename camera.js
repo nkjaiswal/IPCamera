@@ -4,6 +4,7 @@ module.exports = function(){
 
 	var reuse = require("./reusable.js");
 	var reusable = new reuse();
+	var DateDiff = require('date-diff');
 
 	this.getCameraPicture = function(cameraId,callback){
 		//set [Request].[cameraId] = NOW() and return [Pictures].[cameraId]
@@ -18,7 +19,23 @@ module.exports = function(){
 	}
 
 	this.shouldSendPicture = function(cameraId,callback){
-		//if [Request].[cameraId] >= NOW() - 3min then return true else false
+		//if [Request].[cameraId].[LastRequest] - NOW() <= 3min then return true else false
+		mongodbhandler.read("Request",
+			{"cameraId" : cameraId},
+			function(err,result){
+				reusable.log(result[0].LastRequest);
+				if(err){
+					callback(false);
+				}else{
+					var diff = new DateDiff(new Date(), result[0].LastRequest);
+					reusable.log(result[0].LastRequest + "|" + new Date() + "|" + diff.seconds());
+					if(diff.seconds() <= 180){
+						callback(true);
+					}else{
+						callback(false);
+					}
+				}
+			});
 	}
 
 	this.updatePicture = function(cameraId,data,callback){
@@ -26,9 +43,7 @@ module.exports = function(){
 		mongodbhandler.modify("Pictures",
 			{"cameraId" : cameraId},
 			{"cameraId" : cameraId, "image" : data},
-			function(err,result){
-
-			});
+			callback);
 	}
 
 	this.registerCamera = function(cameraId,callback){
